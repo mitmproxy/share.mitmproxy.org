@@ -1,7 +1,4 @@
 "use strict";
-
-console.log('Loading function');
-
 const { execFile } = require('child_process');
 const fs = require('fs');
 const AWS = require('aws-sdk');
@@ -11,21 +8,11 @@ const s3 = new AWS.S3({apiVersion: '2006-03-01'});
 process.env.PATH = process.env.PATH + ":" + process.env.LAMBDA_TASK_ROOT;
 
 
-
 function uploadFile(filePath, s3Path){
     const fileStream = fs.createReadStream(filePath);
     const ct = {
         "html": "text/html",
         "json": "application/json",
-/* static files are now hosted separately.
-        "css": "text/css",
-        "js": "application/javascript",
-        "png": "image/png",
-        "ico": "image/x-icon",
-        "eot": "application/vnd.ms-fontobject",
-        "svg": "image/svg+xml",
-        "ttf": "application/x-font-ttf",
-        "woff": "application/font-woff", */
     }[filePath.split(".").pop()]
     return s3.putObject({
         Body: fileStream,
@@ -68,22 +55,16 @@ exports.handler = (event, context, callback) => {
     console.log(`Event for ${Bucket} / ${Key}`);
 
     // Check that we don't overwrite something - it should not exist yet.
-    const indexHtml = {Bucket: process.env.TARGET_BUCKET, Key: `${Key}/index.html`}
-    s3.headObject(indexHtml, (err, data) => {
+    s3.headObject({Bucket: process.env.TARGET_BUCKET, Key: `${Key}/index.html`}, (err, data) => {
         if (!err || err.code !== "NotFound") {
-            console.log("exists");
-            process.exit(1);
+            callback("A static view with this name already exists.")
         } else {
-
-            console.log("Target does not exist", indexHtml)
-            console.log("Getting flows:", {Bucket, Key})
-
-            // Get file
+            console.log("Get flow file...", {Bucket, Key})
             var file = require('fs').createWriteStream(flowFile);
             s3.getObject({Bucket, Key}).createReadStream().pipe(file).on('finish', e => {
                 file.close();
 
-                // Process it
+                console.log("Convert flow file...")
                 const child = execFile(
                     "mitmweb",
                     [
@@ -94,11 +75,15 @@ exports.handler = (event, context, callback) => {
                     "--no-web-open-browser",
                     "-s", "./shutdown.py",
                     ], (error) => {
-                    // Resolve with result of process
-
-                    upload(staticDir, Key).then(() => {
-                        callback(null, {url: `${process.env.BUCKET_URL}/${Key}`})
-                    }, callback);
+                    if (error) {
+                        callback(error)
+                    } else {
+                        console.log("Upload static files...")
+                        upload(staticDir, Key).then(
+                            () => callback(null, {url: `${process.env.BUCKET_URL}/${Key}`}),
+                            err => callback(err)
+                        );
+                    }
                 });
 
                 // Log process stdout and stderr
