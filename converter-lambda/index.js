@@ -97,7 +97,7 @@ exports.handler = (event, context, callback) => {
                     // Resolve with result of process
 
                     upload(staticDir, Key).then(() => {
-                        callback(null, {url: `http://static.mitmproxy.org/${Key}`})
+                        callback(null, {url: `${process.env.BUCKET_URL}/${Key}`})
                     }, callback);
                 });
 

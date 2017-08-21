@@ -21,3 +21,4 @@ zip -r dist.zip index.js mitmweb ca shutdown.py
 
  - `HOME`: so that mitmweb finds the ca folder.
  - `TARGET_BUCKET`: S3 bucket to upload static files to.
+ - `BUCKET_URL`: Static file URL
