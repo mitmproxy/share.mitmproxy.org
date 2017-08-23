@@ -48,7 +48,7 @@ function upload(fromDir, toDir) {
 exports.handler = (event, context, callback) => {
 
     const Bucket = event.Records[0].s3.bucket.name ;
-    const Key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\W/gi, ''));
+    const Key = decodeURIComponent(event.Records[0].s3.object.key.replace(/[^0-9a-zA-Z\-]/gi, ''));
     const flowFile = `/tmp/${Key}`;
     const staticDir = `/tmp/static-${Key}`;
 
