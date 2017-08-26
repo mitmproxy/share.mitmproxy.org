@@ -45,6 +45,19 @@ function upload(fromDir, toDir) {
     return Promise.all(promises);
 }
 
+function uploadPlaceholder(Key, remaining){
+    console.log("Upload placeholder...")
+    let data = fs.readFileSync("wait.html", "utf8");
+    data = data.replace(/\/\*tstop.+tstop\*\//, Date.now() + remaining)
+    return s3.putObject({
+        Body: data,
+        Bucket: process.env.TARGET_BUCKET,
+        Key: `${Key}/index.html`,
+        ACL: "public-read",
+        ContentType: "text/html",
+    }).promise();
+}
+
 exports.handler = (event, context, callback) => {
 
     const Bucket = event.Records[0].s3.bucket.name ;
@@ -57,8 +70,9 @@ exports.handler = (event, context, callback) => {
     // Check that we don't overwrite something - it should not exist yet.
     s3.headObject({Bucket: process.env.TARGET_BUCKET, Key: `${Key}/index.html`}, (err, data) => {
         if (!err || err.code !== "NotFound") {
-            callback("A static view with this name already exists.")
-        } else {
+            return callback("A static view with this name already exists.")
+        }
+        uploadPlaceholder(Key, context.getRemainingTimeInMillis()).then(()=> {
             console.log("Get flow file...", {Bucket, Key})
             var file = require('fs').createWriteStream(flowFile);
             s3.getObject({Bucket, Key}).createReadStream().pipe(file).on('finish', e => {
@@ -90,7 +104,7 @@ exports.handler = (event, context, callback) => {
                 child.stdout.on('data', console.log);
                 child.stderr.on('data', console.error);
             });
-        }
+        });
     });
 
 };

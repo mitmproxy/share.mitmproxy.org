@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>⌛ Converting mitmproxy flows...</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
+    <style type="text/css">
+        .container {
+            padding: 4em;
+            text-align: center;
+        }
+        #spin {
+            display: inline-block;
+            animation-duration: 0.5s;
+        }
+        #progress {
+            transition-duration: 5s;
+        }
+        @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 id="text"><span id="spin">⌛</span> Converting mitmproxy flows...</h2>
+        <br/>
+        <div class="progress">
+            <div id="progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <script type="application/javascript">
+    const stop = /*tstop*/Date.now() + 7000/*tstop*/;
+    const start = Math.min(Date.now(), stop - 1);
+
+    function check() {
+        let t = +new Date();
+        let done = Math.min(100, (100 * (t-start) / (stop-start)));
+        document.getElementById("progress").style.width = done + "%"
+
+        if (t > stop){
+            document.getElementById("text").textContent = "🤷 Conversion timed out. Sorry."
+        } else {
+
+            // spin hourglass
+            document.getElementById("spin").style.animationName = "";
+            setTimeout(() => document.getElementById("spin").style.animationName = "spin", 100)
+
+            fetch(
+                location.pathname + "flows.json",
+                { method: 'head' }
+            ).then(
+                (resp) => {
+                    if(resp.status !== 200)
+                        throw "not ready";
+                    location.reload();
+                }
+            ).catch(
+                () => setTimeout(check, 5000)
+            )
+        }
+    }
+    check()
+    </script>
+</body>
+</html>
