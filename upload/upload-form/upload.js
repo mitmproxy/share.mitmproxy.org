@@ -14,14 +14,14 @@
         fd.append('Content-Type', 'application/octet-stream');
         fd.append('file', file);
 
-        var url = 'http://upload.share.mitmproxy.org.s3.amazonaws.com'
+        var url = 'https://upload.share.mitmproxy.org.s3.amazonaws.com'
         return fetch(url, {
             method: 'POST',
             body: fd,
         }).then( function(data) {
             console.log('URL at: share.mitmproxy.org/' + id);
             result.className = 'alert alert-success';
-            result.textContent = 'Success! \n Share URL at: http://share.mitmproxy.org/' + id;
+            result.textContent = 'Success! \n Share URL at: https://share.mitmproxy.org/' + id;
         }).catch( function(data) {
             result.className = 'alert alert-danger';
             result.textContent = 'Upload Failed!'
